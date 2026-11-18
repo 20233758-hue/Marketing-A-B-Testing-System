@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  password     String
+  experiments  Experiment[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Experiment {
+  id           String      @id @default(cuid())
+  userId       String
+  title        String
+  hypothesis   String
+  status       String      @default("draft")
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variants     Variant[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model Variant {
+  id           String      @id @default(cuid())
+  experimentId String
+  name         String
+  content      String
+  isDefault    Boolean     @default(false)
+  experiment   Experiment  @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  eventLogs    EventLog[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([experimentId])
+}
+
+model EventLog {
+  id           String     @id @default(cuid())
+  variantId    String
+  eventType    EventType
+  variant      Variant    @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([variantId, eventType])
+}
+
+enum EventType {
+  impression
+  conversion
+}
